@@ -6,19 +6,16 @@ from keras.preprocessing.text import Tokenizer
 from keras.models import Sequential
 from keras.layers import Activation, Dense, Dropout
 from sklearn.preprocessing import LabelBinarizer
-import sklearn.datasets as skds
-from pathlib import Path
-import matplotlib.pyplot as plt
-import itertools
 from sklearn.metrics import confusion_matrix
-import codecs
+
 
 
 # For reproducibility
 np.random.seed(1237)
 
 # Source file directory
-path_train = "/home/annu/Downloads/data/crowdflower-search-relevance/small_train_pp1.csv"
+# path_train = "/home/annu/Downloads/data/crowdflower-search-relevance/small_train_pp1.csv"
+path_train = "/home/annu/Downloads/data/crowdflower-search-relevance/train_pp2.csv"
 
 
 # We have training data available as dictionary filename, category, data
@@ -26,14 +23,12 @@ data = pd.read_csv(path_train)
 
 data["expanded_query"] = data["query"] + " " + data["product_title"] + data["product_description"]
 data = data.fillna("")
-print(data.shape[0])
 
-# print(data["expanded_query"])
 
 num_labels = 4
-vocab_size = 100
-batch_size = 10
-num_epochs = 2
+# vocab_size = 5000
+batch_size = 100
+num_epochs = 10
 
 # lets take 80% data as training and remaining 20% for test.
 train_size = int(len(data) * .8)
@@ -48,7 +43,7 @@ test_tags = data["median_relevance"][train_size:]
 test_ids = data["id"][train_size:]
 
 # define Tokenizer with Vocab Size
-tokenizer = Tokenizer(num_words=vocab_size)
+tokenizer = Tokenizer()
 tokenizer.fit_on_texts(train_posts)
 
 x_train = tokenizer.texts_to_matrix(train_posts, mode='tfidf')
@@ -62,7 +57,7 @@ y_test = encoder.transform(test_tags)
 
 print(x_train.shape)
 print(y_train.shape)
-
+vocab_size = x_train.shape[1]
 # y_train = train_tags
 # y_test = test_tags
 
@@ -103,13 +98,6 @@ score = model.evaluate(x_test, y_test,
 print('Test accuracy:', score[1])
 
 text_labels = encoder.classes_
-
-for i in range(5):
-    prediction = model.predict(np.array([x_test[i]]))
-    predicted_label = text_labels[np.argmax(prediction[0])]
-    print(test_ids.iloc[i])
-    print('Actual label: {}'.format(test_tags.iloc[i]))
-    print("Predicted label: {} ".format(predicted_label))
 
 
 y_pred = model.predict(x_test)

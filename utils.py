@@ -1,6 +1,23 @@
 import re
+
 from bs4 import BeautifulSoup
+from nltk import TreebankWordTokenizer, wordnet
+from nltk.corpus import stopwords
+
 from replacer import CsvWordReplacer
+
+
+toker = TreebankWordTokenizer()
+lemmer = wordnet.WordNetLemmatizer()
+
+def text_preprocessor(x):
+    x_cleaned = x.replace('/', ' ').replace('-', ' ').replace('"', '')
+    x_cleaned = x_cleaned.lower()
+    x_cleaned = re.sub("\d+", "", x_cleaned)
+    tokens = toker.tokenize(x_cleaned)
+    tokens = [w for w in tokens if not w in stopwords.words('english')]
+    return " ".join([lemmer.lemmatize(z) for z in tokens])
+
 
 ## synonym replacer
 replacer = CsvWordReplacer("/home/annu/Downloads/data/crowdflower-search-relevance/synonyms.csv")
@@ -50,17 +67,16 @@ def clean_text(line, drop_html_flag=False):
     names = ["query", "product_title", "product_description"]
     for name in names:
         l = line[name]
+        # clean html
         l = drop_html(l)
-        l = l.lower()
+        # preprocess text
+        l = text_preprocessor(l)
 
-        # ## replace gb
-        # for vol in [16, 32, 64, 128, 500]:
-        #     l = re.sub("%d gb"%vol, "%dgb"%vol, l)
-        #     l = re.sub("%d g"%vol, "%dgb"%vol, l)
-        #     l = re.sub("%dg "%vol, "%dgb "%vol, l)
-        # ## replace tb
-        # for vol in [2]:
-        #     l = re.sub("%d tb"%vol, "%dtb"%vol, l)
+
+        # # remove links
+        # l = re.sub(r'http:\\*/\\*/.*?\s', ' ', l)
+        # # remove css {}
+        # l = re.sub('{.+?}', '', l)
 
         ## replace other words
         for k,v in replace_dict.items():
@@ -78,4 +94,8 @@ def clean_text(line, drop_html_flag=False):
 ## Drop html tag ##
 ###################
 def drop_html(html):
-    return BeautifulSoup(html).get_text(separator=" ")
+    # return BeautifulSoup(html).get_text(separator=" ")
+    soup = BeautifulSoup(html,features="html5lib")
+    for s in soup(['script', 'style']):
+        s.decompose()
+    return ' '.join(soup.stripped_strings)
