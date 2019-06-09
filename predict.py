@@ -1,27 +1,37 @@
-import pandas as pd
+import json
 import numpy as np
 import pickle
 from keras.models import load_model
+from datetime import datetime
+
+from logger import Logger
+from utils import get_data_for_model
+from config import ParamConfig
 
 
+if __name__ == "__main__":
 
-test_processed = "/home/annu/Downloads/data/crowdflower-search-relevance/small_test.csv"
+    Logger.log("PREDICTION STARTED")
+    start = datetime.now()
+    config = ParamConfig()
+    X, ids = get_data_for_model(config.test_preprocessed_path, training_flag=False)
 
+    with open(config.tokenizer_name, 'rb') as handle:
+        tokenizer = pickle.load(handle)
 
-data = pd.read_csv(test_processed)
+    model = load_model(config.model_name)
 
-data["expanded_query"] = data["product_title"] + data["product_description"]
-data = data.fillna("")
+    eval_data = tokenizer.texts_to_matrix(X, mode='tfidf')
 
-with open('tokenizer.pickle', 'rb') as handle:
-    tokenizer = pickle.load(handle)
+    prediction = model.predict(eval_data)
 
-model = load_model('my_model.h5')
+    with open(config.encoder_name) as f:
+        encoded_class = json.load(f)
 
+    Logger.log("RELEVANCE -----> QUERY ID")
+    for i in range(len(prediction)):
+        class_pred = np.argmax(prediction[i])
+        predicted_relevance = encoded_class[str(class_pred)]
+        Logger.log("{} -----> {}".format(predicted_relevance, ids[i]))
 
-test_data = tokenizer.texts_to_matrix(data["expanded_query"], mode='tfidf')
-
-prediction = model.predict(test_data)
-
-for pred in prediction:
-    print(np.argmax(pred))
+    Logger.log("Prediction finished in : {}".format(datetime.now()-start))
