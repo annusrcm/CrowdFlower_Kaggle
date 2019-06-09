@@ -13,14 +13,14 @@ class ParamConfig:
         self.model_folder = "/home/annu/Downloads/data/crowdflower-search-relevance/models/"
         self.logs_folder = "/home/annu/Downloads/data/crowdflower-search-relevance/logs/"
 
-        self.train_path = os.path.join(self.data_folder, "small_train.csv")
-        self.train_preprocessed_path = os.path.join(self.data_folder, "small_train_pp.csv")
-        self.test_path = os.path.join(self.data_folder, "small_test.csv")
-        self.test_preprocessed_path = os.path.join(self.data_folder, "small_test_pp.csv")
+        self.train_path = os.path.join(self.data_folder, "train.csv")
+        self.train_preprocessed_path = os.path.join(self.data_folder, "train_pp.csv")
+        self.test_path = os.path.join(self.data_folder, "test.csv")
+        self.test_preprocessed_path = os.path.join(self.data_folder, "test_pp.csv")
         self.synonyms_csv = os.path.join(self.data_folder, "synonyms.csv")
-        self.model_name = os.path.join(self.model_folder, "small_keras_sequence.h5")
-        self.tokenizer_name = os.path.join(self.model_folder, "small_keras_tokenizer.pickle")
-        self.encoder_name = os.path.join(self.model_folder, "small_encoded_class.json")
+        self.model_name = os.path.join(self.model_folder, "keras_sequence.h5")
+        self.tokenizer_name = os.path.join(self.model_folder, "keras_tokenizer.pickle")
+        self.encoder_name = os.path.join(self.model_folder, "encoded_class.json")
 
         self.create_folder_if_not_present(self.model_folder)
         self.create_folder_if_not_present(self.logs_folder)
