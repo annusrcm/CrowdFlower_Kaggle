@@ -10,7 +10,6 @@ from sklearn.metrics import confusion_matrix
 
 
 
-# For reproducibility
 np.random.seed(1237)
 
 # Source file directory
@@ -21,14 +20,12 @@ path_train = "/home/annu/Downloads/data/crowdflower-search-relevance/train_pp2.c
 # We have training data available as dictionary filename, category, data
 data = pd.read_csv(path_train)
 
-data["expanded_query"] = data["query"] + " " + data["product_title"] + data["product_description"]
+# data["expanded_query"] = data["query"] + " " + data["product_title"] + data["product_description"]
+data["expanded_query"] = data["product_title"] + data["product_description"]
 data = data.fillna("")
 
 
-num_labels = 4
-# vocab_size = 5000
-batch_size = 100
-num_epochs = 10
+
 
 # lets take 80% data as training and remaining 20% for test.
 train_size = int(len(data) * .8)
@@ -58,8 +55,7 @@ y_test = encoder.transform(test_tags)
 print(x_train.shape)
 print(y_train.shape)
 vocab_size = x_train.shape[1]
-# y_train = train_tags
-# y_test = test_tags
+
 
 model = Sequential()
 model.add(Dense(512, input_shape=(vocab_size,)))
@@ -84,12 +80,12 @@ history = model.fit(x_train, y_train,
 
 # Turn this on if you need to save model and tokenizer
 
-# # creates a HDF5 file 'my_model.h5'
-# model.model.save('my_model.h5')
-#
-# # Save Tokenizer i.e. Vocabulary
-# with open('tokenizer.pickle', 'wb') as handle:
-#     pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# creates a HDF5 file 'my_model.h5'
+model.model.save('my_model.h5')
+
+# Save Tokenizer i.e. Vocabulary
+with open('tokenizer.pickle', 'wb') as handle:
+    pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 score = model.evaluate(x_test, y_test,

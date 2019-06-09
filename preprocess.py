@@ -1,26 +1,67 @@
+import re
 import pandas as pd
-from utils import clean_text
-from config import config
+from bs4 import BeautifulSoup
+from nltk import TreebankWordTokenizer, wordnet
+from nltk.corpus import stopwords
+from datetime import datetime
 
-print("Load data...")
+from logger import Logger
+from replacer import CsvWordReplacer
+from config import ParamConfig
 
-train_path = "/home/annu/Downloads/data/crowdflower-search-relevance/train.csv"
-# train_path = "/home/annu/Downloads/data/crowdflower-search-relevance/small_train.csv"
-train_preprocessd = "/home/annu/Downloads/data/crowdflower-search-relevance/train_pp2.csv"
-# train_preprocessd = "/home/annu/Downloads/data/crowdflower-search-relevance/small_train_pp2.csv"
+config = ParamConfig()
 
 
-# dfTrain = pd.read_csv(config.original_train_data_path).fillna("")
-dfTrain = pd.read_csv(train_path).fillna("")
+def text_preprocessor(x):
+    toker = TreebankWordTokenizer()
+    lemmer = wordnet.WordNetLemmatizer()
+    x_cleaned = x.replace('/', ' ').replace('-', ' ').replace('"', '')
+    x_cleaned = x_cleaned.lower()
+    x_cleaned = re.sub("\d+", "", x_cleaned)
+    tokens = toker.tokenize(x_cleaned)
+    tokens = [w for w in tokens if not w in stopwords.words('english')]
+    return " ".join([lemmer.lemmatize(z) for z in tokens])
 
-num_train = dfTrain.shape[0]
-print("Pre-process data...")
 
-clean = lambda line: clean_text(line, drop_html_flag=config.drop_html_flag)
-dfTrain = dfTrain.apply(clean, axis=1)
+def clean_text(line, drop_html_flag=False):
+    replacer = CsvWordReplacer(config.synonyms_csv)
+    names = ["query", "product_title", "product_description"]
+    for name in names:
+        l = line[name]
+        # clean html
+        l = drop_html(l)
+        # preprocess text
+        l = text_preprocessor(l)
+        # remove links
+        l = re.sub(r'http:\\*/\\*/.*?\s', ' ', l)
 
-print("Save data...")
+        ## replace other words
+        for k, v in config.replace_dict.items():
+            l = re.sub(k, v, l)
+        l = l.split(" ")
 
-dfTrain.to_csv(train_preprocessd,encoding='utf-8', index=False)
+        ## replace synonyms
+        l = replacer.replace(l)
+        l = " ".join(l)
+        line[name] = l
+    return line
 
-print("Done.")
+
+def drop_html(html):
+    soup = BeautifulSoup(html, features="html5lib")
+    for s in soup(['script', 'style']):
+        s.decompose()
+    return ' '.join(soup.stripped_strings)
+
+
+def preprocess_data(input_path, output_path):
+    start = datetime.now()
+
+    df = pd.read_csv(input_path).fillna("")
+    Logger.log("Data pre processing starts")
+    clean = lambda line: clean_text(line, drop_html_flag=config.drop_html_flag)
+    df = df.apply(clean, axis=1)
+    df.to_csv(output_path,encoding='utf-8', index=False)
+
+    Logger.log("{} finished pre processing in {}".format(input_path,datetime.now()-start))
+
