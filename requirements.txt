@@ -3,5 +3,5 @@ Keras==2.2.4
 pandas==0.23.0
 regex==2016.1.10
 scikit-learn==0.19.0
-tensorflow==1.7.0
+tensorflow==2.5.3
 nltk==3.2.5
